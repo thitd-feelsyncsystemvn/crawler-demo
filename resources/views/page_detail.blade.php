@@ -53,9 +53,9 @@
 			</thead>
 			<tbody>
 			@if (count($anchors) > 0)
-				@foreach ($anchors as $anchor)
+				@foreach ($anchors as $key => $anchor)
 					<tr>
-						<td>{{$anchor->id}}</td>
+						<td>{{$key+1}}</td>
 						<td>{{$anchor->text}}</td>
 						<td>{{$anchor->type}}</td>
 						<td>{{$anchor->url}}</td>

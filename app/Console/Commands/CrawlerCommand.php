@@ -39,81 +39,71 @@ class CrawlerCommand extends Command
     public function handle()
     {
         try {
-            // get all record status = To do
+            $this->info('START');
+            // get all record status = 0
             $status_todo = DB::table('key_word')->where('status', 0)->get();
             if (count($status_todo)>0) {
                 foreach ($status_todo as $row) {
                     $keyword_id = $row->id;
                     // Update status => text process url 
-                    DB::table('key_word')
-                        ->where('id', $keyword_id)
-                        ->update(['status' => 1]);
+                    DB::table('key_word')->where('id', $keyword_id)->update(['status' => 1]);
+                    $this->info('*** start key word : '. $row->word);
                     // craw urls from google search result
                     $craw_urls = $this->craw_url($row->word);
                     if (count($craw_urls)>0) {
                         // insert pages
                         foreach ($craw_urls as $item) {
-                            // update page
-                            DB::table('page')->insert([
-                                     'keyword_id' => $keyword_id
-                                    ,'title' => $item['title']
-                                    ,'link' => $item['link']
-                                    ,'meta_description' => ''
-                                    ]);
+                            $page_link = $item['link'];
+                            $page_id = DB::table('page')->insertGetId([
+                                             'keyword_id' => $keyword_id
+                                            ,'title' => $item['title']
+                                            ,'link' => $page_link
+                                            ,'meta_description' => ''
+                                            ]);
+                        // increase number_link => key_word table
                             DB::table('key_word')->where('id', $keyword_id)->increment('number_link');
-                        }
-                    }
-                }
-            }
-            // get all record status = Process
-            $status_process = DB::table('key_word')->where('status', 1)->get();
-            if (count($status_process)>0) {
-                foreach ($status_process as $row) {
-                    $keyword_id = $row->id;
-                    // Update status => text process anchor 
-                    DB::table('key_word')->where('id', $keyword_id)->update(['status' => 2]);
-                    // get all links
-                    $page_links = DB::table('page')->where('keyword_id', $keyword_id)->get();
-                    $total_link = 0;
-                    if (count($page_links)>0) {
-                        foreach ($page_links as $page_link) {
-                            $page_id = $page_link->id;
-                            // parse link
-                             $parse_link = $this->parse_link($page_link->link);
-                             $total_link = count($parse_link['list']);
-                            // update meta description
+                        // parse link
+                            $this->info('****** start parse link : '.$page_link);
+                            $parse_link = $this->parse_link($page_link);
+                        // update total_link & meta_description => page table
+                            $total_link = count($parse_link['list']);
                             if (isset($parse_link['meta_description'])) {
-                                DB::table('page')->where('id', $page_id)->update(['meta_description'=>$parse_link['meta_description']]);
+                                DB::table('page')->where('id', $page_id)->update(['total_link'=>$total_link, 'meta_description'=>$parse_link['meta_description']]);
                             }
-                            DB::table('page')->where('id', $page_id)->update(['total_link'=>$total_link]); 
-                            // update page detail
+                            else {
+                                DB::table('page')->where('id', $page_id)->update(['total_link'=>$total_link]);
+                            }
+                        // insert anchors => page_detail table
                             if (count($parse_link['list'])>0) {
-                                foreach ($parse_link['list'] as $key => $item) {
-                                    if (isset($item['img_link'])) {
+                                foreach ($parse_link['list'] as $key => $link_item) {
+                                    if (isset($link_item['img_link'])) {
                                         DB::table('page_detail')->insert([
                                              'page_id' => $page_id
-                                            ,'text' => $item['img_link']
+                                            ,'text' => $link_item['img_link']
                                             ,'type' => 'img'
-                                            ,'url' => $item['url']
+                                            ,'url' => $link_item['url']
                                             ]);
                                     }
                                     else {
                                         DB::table('page_detail')->insert([
                                              'page_id' => $page_id
-                                            ,'text' => htmlentities($item['text'])
+                                            ,'text' => htmlentities($link_item['text'])
                                             ,'type' => 'text'
-                                            ,'url' => $item['url']
+                                            ,'url' => $link_item['url']
                                             ]);
                                     }
+                                // increase number_link => page table
                                     DB::table('page')->where('id', $page_id)->increment('number_link');
                                 }
                             }
+                            $this->info('****** end parse link : '.$page_link);
                         }
                     }
-                    DB::table('key_word')->where('id', 1)->update(['status' => 3]);
+                // update status = 3 => key_word table              
+                    DB::table('key_word')->where('id', $keyword_id)->update(['status' => 3]);
+                    $this->info('*** end key word : '. $row->word);
                 }
             }
-
         } catch (Exception $e) {
             $this->error('Error : ' . $e);
         }
@@ -123,13 +113,8 @@ class CrawlerCommand extends Command
     private function parse_link($link)
     {
         $arr_return = array();
-        $options=array(
-            "ssl"=>array(
-                "verify_peer"=>false,
-                "verify_peer_name"=>false,
-            ),
-        ); 
-        $html = @file_get_contents($link, false, $options);
+        
+        $html = @file_get_contents($link);
         if ($html !== false) { 
             $dom = new \DOMDocument();
             $root_link = rtrim($link,"/");

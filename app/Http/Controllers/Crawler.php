@@ -63,16 +63,16 @@ class Crawler extends Controller
     private function test()
     {
         print_r("<pre>");
-        $link = 'http://www.carmax.com/cars/';
+        $link = 'https://laravel.com/';
         $keyword = 'php';
         
         // $number_link = DB::table('page')->select('number_link')->where('id', 1)->get();
         // echo $number_link{0}->number_link;
-        // $parse_link = $this->parse_link($link);
-        $craw_urls = $this->craw_url($keyword);
+        $parse_link = $this->parse_link($link);
+        // $craw_urls = $this->craw_url($keyword);
 
                 
-                print_r($craw_urls);
+                print_r($parse_link);
                 exit();
     }
     private function parse_link($link)
@@ -85,9 +85,6 @@ class Crawler extends Controller
             )
         ); 
         $html = @file_get_contents($link);
-                print_r('<pre>');
-                print_r($html);
-                exit();
         if ($html !== false) { 
             $dom = new \DOMDocument();
             $root_link = rtrim($link,"/");
