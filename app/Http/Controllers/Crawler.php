@@ -11,7 +11,7 @@ class Crawler extends Controller
 {
     public function index()
     {   
-        $this->test();
+        // $this->test();
 
         $key_words = DB::table('key_word')->get();
 
@@ -19,7 +19,24 @@ class Crawler extends Controller
 
         return view('crawler', $data);
     }
-    
+    public function list_url($id)
+    {
+        $pages = DB::table('page')->where('keyword_id', $id)->get();
+        $data = array('pages' => $pages);
+
+        return view('pages', $data);
+    }
+    public function list_anchor($id)
+    {
+        $data = array();
+        $pages = DB::table('page')->where('id', $id)->get();
+        $data['page'] = $pages{0};
+
+        $anchors = DB::table('page_detail')->where('page_id', $id)->get();
+        $data['anchors'] = $anchors;
+
+        return view('page_detail', $data);
+    }
     public function crawler_start(Request $request)
     {
         $arr_JSON = array();
@@ -46,60 +63,62 @@ class Crawler extends Controller
     private function test()
     {
         print_r("<pre>");
-        $link = 'https://en.wikipedia.org/wiki/Laravel';
-        $keyword = 'laravel';
+        $link = 'http://www.carmax.com/cars/';
+        $keyword = 'php';
         
-        $number_link = DB::table('page')->select('number_link')->where('id', 1)->get();
-        echo $number_link{0}->number_link;
-        // $key_word = 'laravel';
+        // $number_link = DB::table('page')->select('number_link')->where('id', 1)->get();
+        // echo $number_link{0}->number_link;
         // $parse_link = $this->parse_link($link);
-        // $craw_urls = $this->craw_url($keyword);
+        $craw_urls = $this->craw_url($keyword);
 
                 
-                // print_r($number_link);
+                print_r($craw_urls);
                 exit();
     }
     private function parse_link($link)
     {
         $arr_return = array();
-
-        $html = file_get_contents($link);
-        $dom = new \DOMDocument();
-        $root_link = rtrim($link,"/");
-        @$dom->loadHTML($html);
-        $elements = $dom->getElementsByTagName('a');
-        $metas = $dom->getElementsByTagName('meta');
-        foreach ($metas as $key => $meta){
-            if ($meta->getAttribute('name')=="description") {
-                $arr_return['meta_description'] = $meta->getAttribute('content');
+        $options=array(
+            "ssl"=>array(
+                "verify_peer"=>false,
+                "verify_peer_name"=>false,
+            )
+        ); 
+        $html = @file_get_contents($link);
+                print_r('<pre>');
+                print_r($html);
+                exit();
+        if ($html !== false) { 
+            $dom = new \DOMDocument();
+            $root_link = rtrim($link,"/");
+            @$dom->loadHTML($html);
+            $elements = $dom->getElementsByTagName('a');
+            $metas = $dom->getElementsByTagName('meta');
+            foreach ($metas as $key => $meta){
+                if ($meta->getAttribute('name')=="description") {
+                    $arr_return['meta_description'] = $meta->getAttribute('content');
+                }
             }
-        }
-        $arr_return['list'] = array();
-        foreach ($elements as $key => $element){
-
-            $arr_tmp = array();
-            $url = $element->getAttribute('href');
-            $first_character = substr($url, 0, 1);
-            if ($first_character == "" || $first_character == "#" || $first_character == "/") {
-                $url = $root_link.$url;
-            }
-            $arr_tmp['url'] = $url;
-            $arr_tmp['text'] = preg_replace("/\s+/", " ", trim($element->nodeValue));
-            $children = $element->childNodes;
-            // $arr_tmp['sub'] = array();
-            foreach ($children as $item) {
-                // $text = trim($item->nodeValue);
-                // $type = 'text';
-                if (isset($item->tagName)) {
-                    // $type = $item->tagName;
-                    // $arr_tmp['is_img'] = $item->tagName;
-                    if (strtolower($item->tagName) == 'img') {
-                        $arr_tmp['img_link'] = $text = $root_link.$item->getAttribute('src');
+            $arr_return['list'] = array();
+            foreach ($elements as $key => $element){
+                $arr_tmp = array();
+                $url = $element->getAttribute('href');
+                $first_character = substr($url, 0, 1);
+                if ($first_character == "" || $first_character == "#" || $first_character == "/") {
+                    $url = $root_link.$url;
+                }
+                $arr_tmp['url'] = $url;
+                $arr_tmp['text'] = preg_replace("/\s+/", " ", trim($element->nodeValue));
+                $children = $element->childNodes;
+                foreach ($children as $item) {
+                    if (isset($item->tagName)) {
+                        if (strtolower($item->tagName) == 'img') {
+                            $arr_tmp['img_link'] = $text = $root_link.$item->getAttribute('src');
+                        }
                     }
                 }
-                // array_push($arr_tmp['sub'], array('text' => $text, 'type' => $type));
+                array_push($arr_return['list'], $arr_tmp);
             }
-            array_push($arr_return['list'], $arr_tmp);
         }
         return $arr_return;
     }

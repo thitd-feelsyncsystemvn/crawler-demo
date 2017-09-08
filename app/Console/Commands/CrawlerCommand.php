@@ -63,7 +63,7 @@ class CrawlerCommand extends Command
                             DB::table('key_word')->where('id', $keyword_id)->increment('number_link');
                         }
                     }
-                }                
+                }
             }
             // get all record status = Process
             $status_process = DB::table('key_word')->where('status', 1)->get();
@@ -71,9 +71,7 @@ class CrawlerCommand extends Command
                 foreach ($status_process as $row) {
                     $keyword_id = $row->id;
                     // Update status => text process anchor 
-                    DB::table('key_word')
-                        ->where('id', $keyword_id)
-                        ->update(['status' => 2]);
+                    DB::table('key_word')->where('id', $keyword_id)->update(['status' => 2]);
                     // get all links
                     $page_links = DB::table('page')->where('keyword_id', $keyword_id)->get();
                     $total_link = 0;
@@ -85,13 +83,9 @@ class CrawlerCommand extends Command
                              $total_link = count($parse_link['list']);
                             // update meta description
                             if (isset($parse_link['meta_description'])) {
-                                DB::table('page')
-                                    ->where('id', $page_id)
-                                    ->update(['meta_description'=>$parse_link['meta_description']]);
+                                DB::table('page')->where('id', $page_id)->update(['meta_description'=>$parse_link['meta_description']]);
                             }
-                            DB::table('page')->where('keyword_id', $keyword_id)
-                                    ->where('id', $page_id)
-                                    ->update(['total_link'=>$total_link]); 
+                            DB::table('page')->where('id', $page_id)->update(['total_link'=>$total_link]); 
                             // update page detail
                             if (count($parse_link['list'])>0) {
                                 foreach ($parse_link['list'] as $key => $item) {
@@ -112,19 +106,14 @@ class CrawlerCommand extends Command
                                             ]);
                                     }
                                     DB::table('page')->where('id', $page_id)->increment('number_link');
-
                                 }
-                            }
-                            $number_links = DB::table('page')->select('number_link')->where('id', $page_id)->get();
-                            $number_link = $number_links{0}->number_link;
-                            if ($number_link == $total_link) {
-                                DB::table('key_word')->where('id', $keyword_id)->update(['status'=>3]);
                             }
                         }
                     }
-                    
+                    DB::table('key_word')->where('id', 1)->update(['status' => 3]);
                 }
             }
+
         } catch (Exception $e) {
             $this->error('Error : ' . $e);
         }
@@ -134,37 +123,44 @@ class CrawlerCommand extends Command
     private function parse_link($link)
     {
         $arr_return = array();
-
-        $html = file_get_contents($link);
-        $dom = new \DOMDocument();
-        $root_link = rtrim($link,"/");
-        @$dom->loadHTML($html);
-        $elements = $dom->getElementsByTagName('a');
-        $metas = $dom->getElementsByTagName('meta');
-        foreach ($metas as $key => $meta){
-            if ($meta->getAttribute('name')=="description") {
-                $arr_return['meta_description'] = $meta->getAttribute('content');
-            }
-        }
-        $arr_return['list'] = array();
-        foreach ($elements as $key => $element){
-            $arr_tmp = array();
-            $url = $element->getAttribute('href');
-            $first_character = substr($url, 0, 1);
-            if ($first_character == "" || $first_character == "#" || $first_character == "/") {
-                $url = $root_link.$url;
-            }
-            $arr_tmp['url'] = $url;
-            $arr_tmp['text'] = preg_replace("/\s+/", " ", trim($element->nodeValue));
-            $children = $element->childNodes;
-            foreach ($children as $item) {
-                if (isset($item->tagName)) {
-                    if (strtolower($item->tagName) == 'img') {
-                        $arr_tmp['img_link'] = $text = $root_link.$item->getAttribute('src');
-                    }
+        $options=array(
+            "ssl"=>array(
+                "verify_peer"=>false,
+                "verify_peer_name"=>false,
+            ),
+        ); 
+        $html = @file_get_contents($link, false, $options);
+        if ($html !== false) { 
+            $dom = new \DOMDocument();
+            $root_link = rtrim($link,"/");
+            @$dom->loadHTML($html);
+            $elements = $dom->getElementsByTagName('a');
+            $metas = $dom->getElementsByTagName('meta');
+            foreach ($metas as $key => $meta){
+                if ($meta->getAttribute('name')=="description") {
+                    $arr_return['meta_description'] = $meta->getAttribute('content');
                 }
             }
-            array_push($arr_return['list'], $arr_tmp);
+            $arr_return['list'] = array();
+            foreach ($elements as $key => $element){
+                $arr_tmp = array();
+                $url = $element->getAttribute('href');
+                $first_character = substr($url, 0, 1);
+                if ($first_character == "" || $first_character == "#" || $first_character == "/") {
+                    $url = $root_link.$url;
+                }
+                $arr_tmp['url'] = $url;
+                $arr_tmp['text'] = preg_replace("/\s+/", " ", trim($element->nodeValue));
+                $children = $element->childNodes;
+                foreach ($children as $item) {
+                    if (isset($item->tagName)) {
+                        if (strtolower($item->tagName) == 'img') {
+                            $arr_tmp['img_link'] = $text = $root_link.$item->getAttribute('src');
+                        }
+                    }
+                }
+                array_push($arr_return['list'], $arr_tmp);
+            }
         }
         return $arr_return;
     }

@@ -10,10 +10,13 @@
 | contains the "web" middleware group. Now create something great!
 |
 */
+Route::get('/', 'Crawler@index');
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::post('/', ['as'=>'crawler', 'uses'=>'Crawler@crawler_start']);
+
+Route::get('/list_url/{para_rank}', 'Crawler@list_url');
+
+Route::get('/page_detail/{para_page}', 'Crawler@list_anchor');
 
 Route::get('test', function() {
 	return "<h1>Hello World</h1>";
@@ -34,5 +37,4 @@ Route::get('getForm', function() {
 Route::post('postForm',['as'=>'postForm', 'uses'=>'MyController@postForm']);
 */
 
-Route::get('crawler', 'Crawler@index');
-Route::post('crawler', ['as'=>'crawler', 'uses'=>'Crawler@crawler_start']);
+

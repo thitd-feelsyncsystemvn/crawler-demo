@@ -56,8 +56,22 @@
 				@foreach ($key_words as $key_word)
 					<tr>
 						<td>{{$key_word->id}}</td>
-						<td>{{$key_word->word}}</td>
-						<td class="status">{{$key_word->status}}</td>
+						<td>
+							<a href="{{url('/')}}/list_url/{{$key_word->id}}">
+							{{$key_word->word}}
+							</a>
+						</td>
+						<td class="status">
+							@if ($key_word->status==0)
+								{{TEXT_TODO}}
+							@elseif ($key_word->status==1)
+								{{TEXT_PROCESS_URL}}
+							@elseif ($key_word->status==2)
+								{{TEXT_PROCESS_ANCHOR}}
+							@elseif ($key_word->status==3)
+								{{TEXT_DONE}}
+							@endif
+						</td>
 						<td>{{$key_word->input_date}}</td>
 					</tr>
 				@endforeach
@@ -76,7 +90,7 @@
 	    	e.preventDefault();
 	    	var key_word = $('input[name="key_word"]').val();
 	    	$.ajax({
-			   	url : "/my_laravel/crawler",
+			   	url : "/crawler_demo/",
 			   	method : "POST",
 			   	data : { 
 			   		key_word : key_word
