@@ -25,6 +25,7 @@
 	</style>
 </head>
 <body>
+	<p><a href="{{url('/')}}" class="btn_back">Back</a></p>
 	<div class="wrap_list">
 		<table>
 			<thead>
@@ -36,9 +37,9 @@
 			</thead>
 			<tbody>
 			@if (count($pages) > 0)
-				@foreach ($pages as $page)
+				@foreach ($pages as $key => $page)
 					<tr>
-						<td>{{$page->id}}</td>
+						<td>{{$key+1}}</td>
 						<td>
 							<a href="{{url('/')}}/page_detail/{{$page->id}}">
 							{{$page->title}}

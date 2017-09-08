@@ -63,7 +63,7 @@ class CrawlerCommand extends Command
                         // increase number_link => key_word table
                             DB::table('key_word')->where('id', $keyword_id)->increment('number_link');
                         // parse link
-                            $this->info('****** start parse link : '.$page_link);
+                            $this->info('********* start parse link : '.$page_link);
                             $parse_link = $this->parse_link($page_link);
                         // update total_link & meta_description => page table
                             $total_link = count($parse_link['list']);
@@ -96,7 +96,7 @@ class CrawlerCommand extends Command
                                     DB::table('page')->where('id', $page_id)->increment('number_link');
                                 }
                             }
-                            $this->info('****** end parse link : '.$page_link);
+                            $this->info('************ end parse link : '.$page_link);
                         }
                     }
                 // update status = 3 => key_word table              
@@ -140,7 +140,13 @@ class CrawlerCommand extends Command
                 foreach ($children as $item) {
                     if (isset($item->tagName)) {
                         if (strtolower($item->tagName) == 'img') {
-                            $arr_tmp['img_link'] = $text = $root_link.$item->getAttribute('src');
+                            $first_character_link = substr($item->getAttribute('src'), 0, 1);
+                            if ($first_character_link == "" || $first_character_link == "#" || $first_character_link == "/") {
+                                $arr_tmp['img_link'] = $text = $root_link.$item->getAttribute('src');
+                            }
+                            else {
+                                $arr_tmp['img_link'] = $text = $item->getAttribute('src');
+                            }
                         }
                     }
                 }

@@ -5,6 +5,10 @@
 	<title>Crawler</title>
 	<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
 	<style>
+		.btn_back {
+			text-transform: uppercase;
+			color blue;
+		}
 		.wrap_list {
 			float: left;
 			clear: none;
@@ -26,6 +30,7 @@
 	</style>
 </head>
 <body>
+	<p><a href="#" class="btn_back">Back</a></p>
 	<p>URL : {{$page->link}}</p>
 	<div class="wrap_list">
 		<table>
@@ -56,9 +61,20 @@
 				@foreach ($anchors as $key => $anchor)
 					<tr>
 						<td>{{$key+1}}</td>
-						<td>{{$anchor->text}}</td>
+						<td style="max-width: 500px">
+							@if ($anchor->type=='img')
+							<a target="_blank" href="{{$anchor->text}}">
+								{{str_limit($anchor->text,50)}}
+							</a>
+							@else
+								{{str_limit($anchor->text,50)}}
+							@endif
+							
+						</td>
 						<td>{{$anchor->type}}</td>
-						<td>{{$anchor->url}}</td>
+						<td>
+							<a target="_blank" href="{{$anchor->url}}">{{$anchor->url}}</a>
+						</td>
 					</tr>
 				@endforeach
 			@endif
@@ -66,6 +82,10 @@
 		</table>
 	</div>
 	<script>
+		$('.btn_back').click( function(e) {
+			e.preventDefault();
+			history.back(1);
+		});
 	</script>
 </body>
 </html>

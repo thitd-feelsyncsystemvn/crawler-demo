@@ -38,7 +38,7 @@
 		<form id="crawler_form" action="{{route('crawler')}}" method="post">
 			<label>Input key word</label>
 			<input type="text" name="key_word">
-			<input type="submit" value="regist">
+			<input type="submit" value="Regist">
 		</form>
 	</div>
 	<div class="wrap_list">
@@ -56,11 +56,7 @@
 				@foreach ($key_words as $key_word)
 					<tr>
 						<td>{{$key_word->id}}</td>
-						<td>
-							<a href="{{url('/')}}/list_url/{{$key_word->id}}">
-							{{$key_word->word}}
-							</a>
-						</td>
+						<td>{{$key_word->word}}</td>
 						<td class="status">
 							@if ($key_word->status==0)
 								{{TEXT_TODO}}
@@ -69,7 +65,7 @@
 							@elseif ($key_word->status==2)
 								{{TEXT_PROCESS_ANCHOR}}
 							@elseif ($key_word->status==3)
-								{{TEXT_DONE}}
+								<a href="{{url('/')}}/list_url/{{$key_word->id}}">{{TEXT_DONE}}</a>
 							@endif
 						</td>
 						<td>{{$key_word->input_date}}</td>
@@ -88,30 +84,36 @@
 	    });
 	    $('#crawler_form').submit( function(e) {
 	    	e.preventDefault();
-	    	var key_word = $('input[name="key_word"]').val();
-	    	$.ajax({
-			   	url : "/crawler_demo/",
-			   	method : "POST",
-			   	data : { 
-			   		key_word : key_word
-			   	},
-			   	dataType : 'json',
-			   	success : function(data) {
-			   		// row = data.row;
-			   		// tbody = $('.wrap_list').find('table').children('tbody')
-			   		// new_row = '<tr>';
-			   		// 	new_row += '<td>' + (tbody.find('tr').length+1) + '</td>';
-			   		// 	new_row += '<td>' + row.word + '</td>';
-			   		// 	new_row += '<td>' + row.status + '</td>';
-			   		// 	new_row += '<td>' + row.input_date + '</td>';
-			   		// new_row += '</tr>';
-			   		// tbody.append(new_row);
-			   		location.reload();
-			   	},
-			   	error : function() {
-			   		console.log('error call ajax');
-			   	}
-			});
+	    	var key_word = $('input[name="key_word"]').val().trim();
+	    	if (key_word.length==0) {
+	    		alert("Key word requied.");
+	    		$('input[name="key_word"]').focus();
+	    	}
+	    	else {
+	    		$.ajax({
+				   	url : "/crawler_demo/",
+				   	method : "POST",
+				   	data : { 
+				   		key_word : key_word
+				   	},
+				   	dataType : 'json',
+				   	success : function(data) {
+				   		// row = data.row;
+				   		// tbody = $('.wrap_list').find('table').children('tbody')
+				   		// new_row = '<tr>';
+				   		// 	new_row += '<td>' + (tbody.find('tr').length+1) + '</td>';
+				   		// 	new_row += '<td>' + row.word + '</td>';
+				   		// 	new_row += '<td>' + row.status + '</td>';
+				   		// 	new_row += '<td>' + row.input_date + '</td>';
+				   		// new_row += '</tr>';
+				   		// tbody.append(new_row);
+				   		location.reload();
+				   	},
+				   	error : function() {
+				   		console.log('error call ajax');
+				   	}
+				});
+	    	}
 	    });
 		
 		
